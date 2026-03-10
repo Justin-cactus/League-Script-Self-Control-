@@ -1,4 +1,4 @@
-# League-Script-Self-Control-
+# League Self Control Script Features:
 I need to make a script or systematic way to wrangle in my hunger for games. It can be overwhelming to rely on pure willpower.
 
 ## Block Schedule:
