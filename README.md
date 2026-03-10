@@ -26,6 +26,6 @@ I need to make a script or systematic way to wrangle in my hunger for games. It 
 
 ## Scripts to be written:
 
-> lol-enforcer.ps1' — main daemon handling all blocking logic and log monitoring <br>
+> lol-enforcer.ps1 — main daemon handling all blocking logic and log monitoring <br>
 > lol-unblock.ps1 — lifts Tue/Fri time block at 8:30 PM and resets Thu/Sun game counter at midnight <br>
 > setup.ps1 — one-time setup registering firewall rules and Task Scheduler jobs as SYSTEM <br>
