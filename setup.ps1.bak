@@ -1,5 +1,5 @@
 # =============================================================================
-# setup.ps1 - One-time setup for the LoL Block Enforcer system
+# setup.ps1 — One-time setup for the LoL Block Enforcer system
 # Run this script ONCE as Administrator to deploy everything.
 # After this runs, the system operates automatically with no manual steps.
 # =============================================================================
@@ -178,7 +178,7 @@ foreach ($script in $scriptsToCopy) {
         Copy-Item $sourcePath $destPath -Force
         Write-Host "Copied: $script" -ForegroundColor Green
     } else {
-        Write-Host "WARNING: $script not found in $sourceDir - skipping. Add it later." -ForegroundColor Yellow
+        Write-Host "WARNING: $script not found in $sourceDir — skipping. Add it later." -ForegroundColor Yellow
     }
 }
 
@@ -231,7 +231,7 @@ if (-not (Test-Path $counterFile)) {
 
 # -----------------------------------------------------------------------------
 # SECTION 8: CREATE WINDOWS FIREWALL RULES
-# Creates two outbound block rules - one for LeagueClient.exe, one for
+# Creates two outbound block rules — one for LeagueClient.exe, one for
 # League of Legends.exe. These are the rules the enforcer toggles on/off.
 #
 # IMPORTANT: The rules are created in DISABLED state. The enforcer enables
@@ -261,10 +261,10 @@ function New-LolFirewallRule {
     #   -Direction     : Outbound blocks the game from reaching Riot's servers
     #   -Action        : Block drops the packets
     #   -Program       : Scopes the rule to just this executable
-    #   -Enabled False : Starts disabled - enforcer activates it when needed
+    #   -Enabled False : Starts disabled — enforcer activates it when needed
     New-NetFirewallRule `
         -DisplayName $RuleName `
-        -Description "LoL schedule enforcer - do not delete" `
+        -Description "LoL schedule enforcer — do not delete" `
         -Direction Outbound `
         -Action Block `
         -Program $ExePath `
@@ -286,9 +286,9 @@ New-LolFirewallRule -RuleName $fwRuleGame   -ExePath $exeGame   -Description "Lo
 # be killed from a regular user session.
 #
 # Tasks created:
-#   1. Enforcer daemon  - runs at every login
-#   2. Unblock task     - runs at 8:30 PM Tue/Fri
-#   3. Midnight task    - runs at 12:00 AM every day
+#   1. Enforcer daemon  — runs at every login
+#   2. Unblock task     — runs at 8:30 PM Tue/Fri
+#   3. Midnight task    — runs at 12:00 AM every day
 # -----------------------------------------------------------------------------
 
 Write-Host "`nRegistering scheduled tasks..." -ForegroundColor Cyan
@@ -321,7 +321,7 @@ $enforcerSettings = New-ScheduledTaskSettingsSet `
     -RestartCount 3 `
     -RestartInterval (New-TimeSpan -Minutes 1)
 # MultipleInstances IgnoreNew: if already running, don't start a second copy
-# ExecutionTimeLimit 0: no time limit - daemon runs indefinitely
+# ExecutionTimeLimit 0: no time limit — daemon runs indefinitely
 # RestartCount/Interval: auto-restart up to 3 times if it crashes
 
 $existingEnforcer = Get-ScheduledTask -TaskName $taskNameEnforcer -ErrorAction SilentlyContinue
@@ -348,7 +348,7 @@ $unblockAction = New-ScheduledTaskAction `
     -Argument "-NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$unblockScript`" -Mode Unblock"
 # -Mode Unblock tells lol-unblock.ps1 which operation to perform (lift block)
 
-# Daily trigger at 8:30 PM - we'll restrict to Tue/Fri inside the script
+# Daily trigger at 8:30 PM — we'll restrict to Tue/Fri inside the script
 # because ScheduledTaskTrigger doesn't support multi-day weekly triggers cleanly.
 $unblockTrigger = New-ScheduledTaskTrigger -Daily -At "8:30 PM"
 
@@ -400,7 +400,7 @@ if ($existingMidnight) {
 
 
 # -----------------------------------------------------------------------------
-# SECTION 10: SETUP COMPLETE - SUMMARY & TESTING CHECKLIST
+# SECTION 10: SETUP COMPLETE — SUMMARY & TESTING CHECKLIST
 # Prints a summary of everything that was deployed and what to verify.
 # -----------------------------------------------------------------------------
 if ($Test) {
@@ -426,7 +426,7 @@ if ($Test) {
  
     Write-Host '[ ] 1. Open Windows Defender Firewall > Advanced Settings > Outbound Rules'
     Write-Host "       Confirm two rules exist named '$fwRuleClient' and '$fwRuleGame'"
-    Write-Host '       Both should show Status: No (disabled) - this is correct'
+    Write-Host '       Both should show Status: No (disabled) — this is correct'
     Write-Host ''
     Write-Host '[ ] 2. Open Task Scheduler. Look under Task Scheduler Library.'
     Write-Host '       Confirm three tasks exist with the GUID names listed above.'
