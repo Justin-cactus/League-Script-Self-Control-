@@ -3,28 +3,37 @@
 # Run this script ONCE as Administrator to deploy everything.
 # After this runs, the system operates automatically with no manual steps.
 # =============================================================================
-
+param(
+    [switch]$Test
+)
 # -----------------------------------------------------------------------------
 # SECTION 1: ADMIN CHECK
 # The script must run elevated (as Administrator) to create firewall rules
 # and register Task Scheduler jobs under the SYSTEM account.
 # -----------------------------------------------------------------------------
 
-# [Security.Principal.WindowsIdentity]::GetCurrent() gets the identity of
-# whoever is running this script right now.
+#1.1:
 $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
 
+
+#1.2:
 # Wrap that identity in a WindowsPrincipal object so we can check its role.
 $principal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
 
+
+#1.3:
 # Check whether that principal belongs to the built-in Administrators role.
 $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
+
+#1.4:
 if (-not $isAdmin) {
     Write-Host "ERROR: This script must be run as Administrator. Right-click PowerShell and choose 'Run as Administrator'." -ForegroundColor Red
     exit 1
 }
 
+
+#1.5:
 Write-Host "Admin check passed." -ForegroundColor Green
 
 
@@ -35,12 +44,13 @@ Write-Host "Admin check passed." -ForegroundColor Green
 # -----------------------------------------------------------------------------
 
 # Where the enforcer scripts will be stored on disk.
-# Chosen to look like a legitimate Microsoft tool directory.
 $installDir = "C:\ProgramData\Microsoft\DevTools"
+
 
 # The state file that tracks how many games have been played on Thu/Sun.
 # Stored separately in ProgramData root so SYSTEM can always read/write it.
 $counterFile = "C:\ProgramData\lol_game_counter.dat"
+
 
 # Obfuscated names for the Task Scheduler tasks.
 # GUIDs make them hard to find without knowing exactly what to search for.
@@ -48,8 +58,9 @@ $taskNameEnforcer  = "{3F7A2B1C-09DE-4F8A-BC12-7E6D5A490831}"   # Main daemon
 $taskNameUnblock   = "{A1C4E290-5B73-4D1F-9022-FD8B3C71A654}"   # 8:30 PM unblock (Tue/Fri)
 $taskNameMidnight  = "{D9F0127E-C384-4AB6-8E51-3047BC96F210}"   # Midnight re-block + counter reset
 
+
 # Obfuscated firewall rule names.
-# These block LoL's two main executables at the network level.
+# These block LoL's two main executables at the network level. (Verify this)
 $fwRuleClient = "MsDevDiagSvc_NetFilter_4421"    # Targets LeagueClient.exe
 $fwRuleGame   = "MsDevDiagSvc_NetFilter_4422"    # Targets League of Legends.exe
 
@@ -64,6 +75,7 @@ $fwRuleGame   = "MsDevDiagSvc_NetFilter_4422"    # Targets League of Legends.exe
 
 Write-Host "`nDetecting League of Legends installation..." -ForegroundColor Cyan
 
+
 # Method 1: Check the default install location.
 $defaultPath = "C:\Riot Games\League of Legends"
 $lolPath = $null
@@ -73,6 +85,7 @@ if (Test-Path "$defaultPath\LeagueClient.exe") {
     $lolPath = $defaultPath
     Write-Host "Found at default path: $lolPath" -ForegroundColor Green
 }
+
 
 # Method 2: Check the registry for Riot's uninstall entry.
 # When Riot installs, it writes the install location to the registry.
@@ -99,6 +112,7 @@ if (-not $lolPath) {
         if ($lolPath) { break }
     }
 }
+
 
 # Method 3: Ask the user directly if both automated methods failed.
 if (-not $lolPath) {
@@ -389,44 +403,45 @@ if ($existingMidnight) {
 # SECTION 10: SETUP COMPLETE — SUMMARY & TESTING CHECKLIST
 # Prints a summary of everything that was deployed and what to verify.
 # -----------------------------------------------------------------------------
+if($Test) {
+    Write-Host "`n=============================================" -ForegroundColor Cyan
+    Write-Host " SETUP COMPLETE" -ForegroundColor Cyan
+    Write-Host "=============================================" -ForegroundColor Cyan
 
-Write-Host "`n=============================================" -ForegroundColor Cyan
-Write-Host " SETUP COMPLETE" -ForegroundColor Cyan
-Write-Host "=============================================" -ForegroundColor Cyan
+    Write-Host "`nDeployed to:     $installDir"
+    Write-Host "Config file:     $configPath"
+    Write-Host "Counter file:    $counterFile"
+    Write-Host "LoL path:        $lolPath"
+    Write-Host ""
+    Write-Host "Firewall rules:"
+    Write-Host "  $fwRuleClient  (targets LeagueClient.exe)"
+    Write-Host "  $fwRuleGame    (targets League of Legends.exe)"
+    Write-Host ""
+    Write-Host "Scheduled tasks:"
+    Write-Host "  $taskNameEnforcer  (at login)"
+    Write-Host "  $taskNameUnblock   (8:30 PM daily)"
+    Write-Host "  $taskNameMidnight  (12:00 AM daily)"
 
-Write-Host "`nDeployed to:     $installDir"
-Write-Host "Config file:     $configPath"
-Write-Host "Counter file:    $counterFile"
-Write-Host "LoL path:        $lolPath"
-Write-Host ""
-Write-Host "Firewall rules:"
-Write-Host "  $fwRuleClient  (targets LeagueClient.exe)"
-Write-Host "  $fwRuleGame    (targets League of Legends.exe)"
-Write-Host ""
-Write-Host "Scheduled tasks:"
-Write-Host "  $taskNameEnforcer  (at login)"
-Write-Host "  $taskNameUnblock   (8:30 PM daily)"
-Write-Host "  $taskNameMidnight  (12:00 AM daily)"
-
-Write-Host "`n--- TESTING CHECKLIST ---" -ForegroundColor Yellow
-Write-Host "[ ] 1. Open Windows Defender Firewall > Advanced Settings > Outbound Rules"
-Write-Host "       Confirm two rules exist named '$fwRuleClient' and '$fwRuleGame'"
-Write-Host "       Both should show Status: No (disabled) — this is correct"
-Write-Host ""
-Write-Host "[ ] 2. Open Task Scheduler. Look under Task Scheduler Library."
-Write-Host "       Confirm three tasks exist with the GUID names listed above."
-Write-Host "       All three should show 'Run As: SYSTEM'"
-Write-Host ""
-Write-Host "[ ] 3. Navigate to $installDir"
-Write-Host "       Confirm lol-enforcer.ps1, lol-unblock.ps1, and config.dat are present"
-Write-Host "       (You may need to enable 'Show hidden items' in Explorer)"
-Write-Host ""
-Write-Host "[ ] 4. Open config.dat and verify the LoL paths look correct"
-Write-Host ""
-Write-Host "[ ] 5. Check C:\ProgramData\lol_game_counter.dat exists and contains '0'"
-Write-Host ""
-Write-Host "[ ] 6. Manually enable one firewall rule and try launching LoL."
-Write-Host "       The client should fail to connect. Then disable the rule and verify it connects."
-Write-Host "       (This validates the firewall rules actually work before the enforcer uses them)"
-Write-Host ""
-Write-Host "Once all boxes are checked, setup.ps1 is fully validated." -ForegroundColor Green
+    Write-Host "`n--- TESTING CHECKLIST ---" -ForegroundColor Yellow
+    Write-Host "[ ] 1. Open Windows Defender Firewall > Advanced Settings > Outbound Rules"
+    Write-Host "       Confirm two rules exist named '$fwRuleClient' and '$fwRuleGame'"
+    Write-Host "       Both should show Status: No (disabled) — this is correct"
+    Write-Host ""
+    Write-Host "[ ] 2. Open Task Scheduler. Look under Task Scheduler Library."
+    Write-Host "       Confirm three tasks exist with the GUID names listed above."
+    Write-Host "       All three should show 'Run As: SYSTEM'"
+    Write-Host ""
+    Write-Host "[ ] 3. Navigate to $installDir"
+    Write-Host "       Confirm lol-enforcer.ps1, lol-unblock.ps1, and config.dat are present"
+    Write-Host "       (You may need to enable 'Show hidden items' in Explorer)"
+    Write-Host ""
+    Write-Host "[ ] 4. Open config.dat and verify the LoL paths look correct"
+    Write-Host ""
+    Write-Host "[ ] 5. Check C:\ProgramData\lol_game_counter.dat exists and contains '0'"
+    Write-Host ""
+    Write-Host "[ ] 6. Manually enable one firewall rule and try launching LoL."
+    Write-Host "       The client should fail to connect. Then disable the rule and verify it connects."
+    Write-Host "       (This validates the firewall rules actually work before the enforcer uses them)"
+    Write-Host ""
+    Write-Host "Once all boxes are checked, setup.ps1 is fully validated." -ForegroundColor Green
+}
