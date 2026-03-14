@@ -282,7 +282,7 @@ function Invoke-LogChangeHandler {
 			4 { Write-Log "Game 4 reached - sending warning notification."
 				Send-UserMessage "League of Legends: Game 4 of 4 completed. This was your last game - access will be blocked after this session."
 				}
-			{ $_ -ge 5 } {
+			{ $newCount -ge 5 } {
 				Write-Log "Game limit exceeded ($newCount games). Applying firewall block." "WARN"
 				Enable-LolBlock
 				Send-UserMessage "League of Legends: Daily game limit reached. Access has been blocked until tomorrow."
