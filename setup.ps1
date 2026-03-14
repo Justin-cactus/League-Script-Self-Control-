@@ -353,7 +353,8 @@ $unblockAction = New-ScheduledTaskAction `
 $unblockTrigger = New-ScheduledTaskTrigger -Daily -At "8:30 PM"
 
 $unblockSettings = New-ScheduledTaskSettingsSet `
-    -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 5) `
+    -StartWhenAvailable   # <- fires missed task on next startup
 
 $existingUnblock = Get-ScheduledTask -TaskName $taskNameUnblock -ErrorAction SilentlyContinue
 if ($existingUnblock) {
@@ -382,7 +383,8 @@ $midnightAction = New-ScheduledTaskAction `
 $midnightTrigger = New-ScheduledTaskTrigger -Daily -At "12:00 AM"
 
 $midnightSettings = New-ScheduledTaskSettingsSet `
-    -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 5) `
+    -StartWhenAvailable   # <- fires missed task on next startup
 
 $existingMidnight = Get-ScheduledTask -TaskName $taskNameMidnight -ErrorAction SilentlyContinue
 if ($existingMidnight) {
