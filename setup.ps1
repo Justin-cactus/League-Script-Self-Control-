@@ -77,7 +77,7 @@ Write-Host "`nDetecting League of Legends installation..." -ForegroundColor Cyan
 
 
 # Method 1: Check the default install location.
-$defaultPath = "C:\Riot Games\League of Legends"
+$defaultPath = "D:\Riot Games\League of Legends"
 $lolPath = $null
 
 if (Test-Path "$defaultPath\LeagueClient.exe") {
