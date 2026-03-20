@@ -77,7 +77,7 @@ Write-Host "`nDetecting League of Legends installation..." -ForegroundColor Cyan
 
 
 # Method 1: Check the default install location.
-$defaultPath = "C:\Riot Games\League of Legends"
+$defaultPath = "D:\Riot Games\League of Legends"
 $lolPath = $null
 
 if (Test-Path "$defaultPath\LeagueClient.exe") {
@@ -245,23 +245,16 @@ Write-Host "`nCreating firewall rules..." -ForegroundColor Cyan
 function New-LolFirewallRule {
     param(
         [string]$RuleName,
-        [string]$ExePath,
-        [string]$Description
+        [string]$ExePath
     )
 
-    # Check if a rule with this name already exists.
+    # Remove existing rule if present before recreating.
     $existing = Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue
     if ($existing) {
-        Write-Host "Firewall rule already exists: $RuleName" -ForegroundColor Yellow
-        return
+        Remove-NetFirewallRule -DisplayName $RuleName
+        Write-Host "Removed existing firewall rule: $RuleName" -ForegroundColor Yellow
     }
 
-    # New-NetFirewallRule creates the rule. Key parameters:
-    #   -DisplayName   : The name we'll use to find/toggle this rule later
-    #   -Direction     : Outbound blocks the game from reaching Riot's servers
-    #   -Action        : Block drops the packets
-    #   -Program       : Scopes the rule to just this executable
-    #   -Enabled False : Starts disabled - enforcer activates it when needed
     New-NetFirewallRule `
         -DisplayName $RuleName `
         -Description "LoL schedule enforcer - do not delete" `
@@ -326,17 +319,18 @@ $enforcerSettings = New-ScheduledTaskSettingsSet `
 
 $existingEnforcer = Get-ScheduledTask -TaskName $taskNameEnforcer -ErrorAction SilentlyContinue
 if ($existingEnforcer) {
-    Write-Host "Enforcer task already exists, skipping." -ForegroundColor Yellow
-} else {
-    Register-ScheduledTask `
-        -TaskName  $taskNameEnforcer `
-        -Action    $enforcerAction `
-        -Trigger   $enforcerTrigger `
-        -Principal $systemPrincipal `
-        -Settings  $enforcerSettings `
-        -Force | Out-Null
-    Write-Host "Registered enforcer task: $taskNameEnforcer" -ForegroundColor Green
+    Unregister-ScheduledTask -TaskName $taskNameEnforcer -Confirm:$false
+    Write-Host "Removed existing task: $taskNameEnforcer" -ForegroundColor Yellow
 }
+Register-ScheduledTask `
+    -TaskName  $taskNameEnforcer `
+    -Action    $enforcerAction `
+    -Trigger   $enforcerTrigger `
+    -Principal $systemPrincipal `
+    -Settings  $enforcerSettings `
+    -Force | Out-Null
+Write-Host "Registered enforcer task: $taskNameEnforcer" -ForegroundColor Green
+
 
 
 # --- TASK 2: Unblock Task (8:30 PM, Tuesday and Friday) ---
@@ -353,21 +347,22 @@ $unblockAction = New-ScheduledTaskAction `
 $unblockTrigger = New-ScheduledTaskTrigger -Daily -At "8:30 PM"
 
 $unblockSettings = New-ScheduledTaskSettingsSet `
-    -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 5) `
+    -StartWhenAvailable   # <- fires missed task on next startup
 
 $existingUnblock = Get-ScheduledTask -TaskName $taskNameUnblock -ErrorAction SilentlyContinue
 if ($existingUnblock) {
-    Write-Host "Unblock task already exists, skipping." -ForegroundColor Yellow
-} else {
-    Register-ScheduledTask `
-        -TaskName  $taskNameUnblock `
-        -Action    $unblockAction `
-        -Trigger   $unblockTrigger `
-        -Principal $systemPrincipal `
-        -Settings  $unblockSettings `
-        -Force | Out-Null
-    Write-Host "Registered unblock task: $taskNameUnblock" -ForegroundColor Green
+    Unregister-ScheduledTask -TaskName $taskNameUnblock -Confirm:$false
+    Write-Host "Removed existing task: $taskNameUnblock" -ForegroundColor Yellow
 }
+Register-ScheduledTask `
+    -TaskName  $taskNameUnblock `
+    -Action    $unblockAction `
+    -Trigger   $unblockTrigger `
+    -Principal $systemPrincipal `
+    -Settings  $unblockSettings `
+    -Force | Out-Null
+Write-Host "Registered unblock task: $taskNameUnblock" -ForegroundColor Green
 
 
 # --- TASK 3: Midnight Task (12:00 AM, every day) ---
@@ -382,21 +377,22 @@ $midnightAction = New-ScheduledTaskAction `
 $midnightTrigger = New-ScheduledTaskTrigger -Daily -At "12:00 AM"
 
 $midnightSettings = New-ScheduledTaskSettingsSet `
-    -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 5) `
+    -StartWhenAvailable   # <- fires missed task on next startup
 
 $existingMidnight = Get-ScheduledTask -TaskName $taskNameMidnight -ErrorAction SilentlyContinue
 if ($existingMidnight) {
-    Write-Host "Midnight task already exists, skipping." -ForegroundColor Yellow
-} else {
-    Register-ScheduledTask `
-        -TaskName  $taskNameMidnight `
-        -Action    $midnightAction `
-        -Trigger   $midnightTrigger `
-        -Principal $systemPrincipal `
-        -Settings  $midnightSettings `
-        -Force | Out-Null
-    Write-Host "Registered midnight task: $taskNameMidnight" -ForegroundColor Green
+    Unregister-ScheduledTask -TaskName $taskNameMidnight -Confirm:$false
+    Write-Host "Removed existing task: $taskNameMidnight" -ForegroundColor Yellow
 }
+Register-ScheduledTask `
+    -TaskName  $taskNameMidnight `
+    -Action    $midnightAction `
+    -Trigger   $midnightTrigger `
+    -Principal $systemPrincipal `
+    -Settings  $midnightSettings `
+    -Force | Out-Null
+Write-Host "Registered midnight task: $taskNameMidnight" -ForegroundColor Green
 
 
 # -----------------------------------------------------------------------------
