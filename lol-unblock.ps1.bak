@@ -90,7 +90,6 @@ function Disable-LolBlock {
 # Called at midnight on Thu/Sun to start fresh each day.
 function Reset-GameCounter {
     Set-Content $counterFile "0" -Encoding UTF8
-	Write-Log "Game counter reset to 0."
 }
 
 # Returns the current state of the firewall rules as a readable string.
