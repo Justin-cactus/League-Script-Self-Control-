@@ -33,6 +33,7 @@ if (-not $Mode) {
 # -----------------------------------------------------------------------------
 
 $configPath = "C:\ProgramData\Microsoft\DevTools\config.dat"
+$installDir = "C:\ProgramData\Microsoft\DevTools"
 
 if (-not (Test-Path $configPath)) {
     Write-Host "ERROR: Config file not found at $configPath. Has setup.ps1 been run?" -ForegroundColor Red
@@ -184,7 +185,16 @@ if ($Mode -eq "Midnight") {
     $actionTaken = "None - no action required for $today"
 
     switch ($today) {
-
+		
+		# Midnight into a GameLimit day - lift the block so the day starts free.
+		# The enforcer will re-apply it once the game counter hits 5.
+		{ $_ -in @("Thursday", "Sunday") } {
+			Disable-LolBlock
+			Reset-GameCounter
+			$actionTaken = "Block lifted and counter reset (GameLimit day starting)"
+			Write-Log "Midnight mode - day is $today. Action: $actionTaken"
+		}	
+		
         # Midnight after Tuesday and Friday - re-apply the block.
         { $_ -in @("Wednesday", "Saturday") } {
             Enable-LolBlock
