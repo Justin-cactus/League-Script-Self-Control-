@@ -1,4 +1,4 @@
-# ranked-rehab
+# Gaming Rehab Script
 
 This is a self-imposed League of Legends schedule enforcer for Windows. It automatically blocks access on designated days, enforces a daily game limit on free days, and lifts restrictions on a timer — all running silently in the background as a SYSTEM process with no manual intervention required after setup.
 
